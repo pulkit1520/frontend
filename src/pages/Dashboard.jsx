@@ -21,8 +21,39 @@ import toast from 'react-hot-toast';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
-  const { getFormattedStats, recentActivity, loading, error, updateDashboardStats, forceUpdateStats, notifyFileUploaded, refreshDashboardWithRetry, uploadCount, resetUploadCount } = useDashboard();
-  const stats = getFormattedStats();
+  const { dashboardStats, recentActivity, loading, error, updateDashboardStats, forceUpdateStats, notifyFileUploaded, refreshDashboardWithRetry, uploadCount, formatBytes, formatNumber } = useDashboard();
+  
+  // Create formatted stats array for display
+  const stats = [
+    {
+      title: 'Total Files',
+      value: formatNumber(dashboardStats.totalFiles),
+      change: '+0%',
+      icon: FileSpreadsheet,
+      color: 'blue'
+    },
+    {
+      title: 'Analyses Created',
+      value: formatNumber(dashboardStats.totalAnalyses),
+      change: '+0%',
+      icon: BarChart3,
+      color: 'green'
+    },
+    {
+      title: 'Data Points',
+      value: formatNumber(dashboardStats.totalDataPoints),
+      change: '+0%',
+      icon: Activity,
+      color: 'purple'
+    },
+    {
+      title: 'Storage Used',
+      value: formatBytes(dashboardStats.totalSize),
+      change: '+0%',
+      icon: TrendingUp,
+      color: 'yellow'
+    }
+  ];
   const navigate = useNavigate();
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploadLoading, setUploadLoading] = useState(false);

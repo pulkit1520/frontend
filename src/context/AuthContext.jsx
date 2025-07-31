@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { loginUser, registerUser, logoutUser, getCurrentUser,
+import { loginUser, registerUser, logoutUser, getCurrentUser, updateUser,
   selectAuth, selectIsAuthenticated } from '../store/slices/authSlice';
 
 const AuthContext = createContext();
@@ -17,7 +17,18 @@ export const AuthProvider = ({ children }) => {
   }, [dispatch, authState.token]);
 
   const login = async (credentials, rememberMe = false) => {
-    return dispatch(loginUser({ credentials, rememberMe }));
+    try {
+      const result = await dispatch(loginUser({ credentials, rememberMe }));
+      // Check if the thunk was fulfilled
+      if (loginUser.fulfilled.match(result)) {
+        return result.payload;
+      } else {
+        throw new Error(result.payload || 'Login failed');
+      }
+    } catch (error) {
+      console.error('AuthContext login error:', error);
+      throw error;
+    }
   };
 
   const register = async (userData) => {
@@ -28,11 +39,16 @@ export const AuthProvider = ({ children }) => {
     return dispatch(logoutUser());
   };
 
+  const updateUserProfile = (userData) => {
+    dispatch(updateUser(userData));
+  };
+
   const value = {
     ...authState,
     login,
     register,
     logout,
+    updateUser: updateUserProfile,
   };
 
   return (
