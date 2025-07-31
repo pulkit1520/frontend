@@ -24,8 +24,20 @@ const AdminDashboard = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [userFilter, setUserFilter] = useState('');
-  const [roleFilter, setRoleFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all');
+const [roleFilter, setRoleFilter] = useState('all');
+const [statusFilter, setStatusFilter] = useState('all');
+
+// Debounce function
+function debounce(fn, delay) {
+  let timer;
+  return function(...args) {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), delay);
+  };
+}
+
+// Debounced function to set the filter
+const debouncedSetUserFilter = debounce((value) => setUserFilter(value), 300);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -329,7 +341,7 @@ const AdminDashboard = () => {
                 type="text"
                 placeholder="Search users..."
                 value={userFilter}
-                onChange={(e) => setUserFilter(e.target.value)}
+onChange={(e) => debouncedSetUserFilter(e.target.value)
                 className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               <select
