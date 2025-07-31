@@ -23,6 +23,7 @@ const AdminDashboard = () => {
   const [stats, setStats] = useState(null);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [usersLoading, setUsersLoading] = useState(false);
   const [userFilter, setUserFilter] = useState('');
 const [roleFilter, setRoleFilter] = useState('all');
 const [statusFilter, setStatusFilter] = useState('all');
@@ -50,28 +51,41 @@ const debouncedSetUserFilter = debounce((value) => setUserFilter(value), 300);
 
   useEffect(() => {
     fetchDashboardData();
+  }, []);
+  
+  useEffect(() => {
+    fetchUserData();
   }, [currentPage, userFilter, roleFilter, statusFilter]);
 
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const [statsData, usersData] = await Promise.all([
-        adminService.getDashboardStats(),
-        adminService.getUsers({ 
-          page: currentPage, 
-          limit: usersPerPage,
-          search: userFilter,
-          role: roleFilter !== 'all' ? roleFilter : undefined,
-          status: statusFilter !== 'all' ? statusFilter : undefined
-        })
-      ]);
+      const statsData = await adminService.getDashboardStats();
       setStats(statsData);
-      setUsers(usersData.users || []);
     } catch (error) {
-      console.error('Error fetching admin data:', error);
-      toast.error('Failed to load dashboard data');
+      console.error('Error fetching stats:', error);
+      toast.error('Failed to load dashboard stats');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchUserData = async () => {
+    try {
+      setUsersLoading(true);
+      const usersData = await adminService.getUsers({ 
+        page: currentPage, 
+        limit: usersPerPage,
+        search: userFilter,
+        role: roleFilter !== 'all' ? roleFilter : undefined,
+        status: statusFilter !== 'all' ? statusFilter : undefined
+      });
+      setUsers(usersData.users || []);
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+      toast.error('Failed to load user data');
+    } finally {
+      setUsersLoading(false);
     }
   };
 
