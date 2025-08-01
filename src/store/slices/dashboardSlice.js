@@ -20,6 +20,14 @@ export const fetchDashboardStats = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       console.log('📊 Fetching dashboard stats from Redux...');
+      
+      // Check if user is authenticated before making the request
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      if (!token) {
+        console.warn('⚠️ No authentication token found, skipping dashboard stats fetch');
+        return rejectWithValue('No authentication token available');
+      }
+      
       const response = await fileService.getDashboardStats();
       console.log('📊 Dashboard stats response:', response);
       
@@ -53,7 +61,24 @@ export const fetchDashboardStats = createAsyncThunk(
       throw new Error('Invalid response format');
     } catch (error) {
       console.error('❌ Error fetching dashboard stats:', error);
-      return rejectWithValue(error.response?.data?.message || 'Failed to load dashboard data');
+      
+      // More detailed error logging
+      if (error.code === 'ERR_NETWORK' || error.code === 'ERR_CONNECTION_RESET') {
+        console.error('🌐 Network connectivity issue in dashboard stats fetch');
+        return rejectWithValue('Network connection error. Please check your internet connection and try again.');
+      }
+      
+      if (error.response?.status === 401) {
+        console.error('🔐 Authentication error in dashboard stats fetch');
+        return rejectWithValue('Authentication failed. Please log in again.');
+      }
+      
+      if (error.response?.status === 404) {
+        console.error('📍 Dashboard stats endpoint not found');
+        return rejectWithValue('Dashboard stats service is not available.');
+      }
+      
+      return rejectWithValue(error.response?.data?.message || error.message || 'Failed to load dashboard data');
     }
   }
 );

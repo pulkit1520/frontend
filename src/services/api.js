@@ -9,6 +9,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true, // Enable CORS credentials
 });
 
 // Request interceptor to add auth token
@@ -31,6 +32,24 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+
+    // Log detailed error information for debugging
+    console.error('🔴 API Error Details:', {
+      message: error.message,
+      code: error.code,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      url: error.config?.url,
+      method: error.config?.method,
+      data: error.response?.data
+    });
+
+    // Handle network errors specifically
+    if (error.code === 'ERR_NETWORK' || error.code === 'ERR_CONNECTION_RESET') {
+      console.error('🌐 Network connectivity issue detected');
+      toast.error('Network connection error. Please check if the backend is running and accessible.');
+      return Promise.reject(error);
+    }
 
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
@@ -65,7 +84,7 @@ api.interceptors.response.use(
       toast.error('Resource not found.');
     } else if (error.response?.status >= 500) {
       toast.error('Server error. Please try again later.');
-    } else if (!error.response) {
+    } else if (!error.response && error.code !== 'ERR_NETWORK' && error.code !== 'ERR_CONNECTION_RESET') {
       toast.error('Network error. Please check your connection.');
     }
 

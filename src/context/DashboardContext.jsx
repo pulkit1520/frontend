@@ -60,6 +60,32 @@ export const DashboardProvider = ({ children }) => {
     updateDashboardStats();
   }, []);
 
+  // Enhanced retry mechanism with exponential backoff
+  const refreshDashboardWithRetry = async (maxRetries = 3) => {
+    let retries = 0;
+    
+    const attemptRefresh = async () => {
+      try {
+        await dispatch(fetchDashboardStats());
+        console.log(`✅ Dashboard refresh successful on attempt ${retries + 1}`);
+      } catch (error) {
+        retries++;
+        console.error(`❌ Dashboard refresh failed (attempt ${retries}/${maxRetries}):`, error);
+        
+        if (retries < maxRetries) {
+          const delay = Math.pow(2, retries) * 1000; // Exponential backoff
+          console.log(`⏳ Retrying in ${delay}ms...`);
+          setTimeout(attemptRefresh, delay);
+        } else {
+          console.error('❌ All dashboard refresh attempts failed');
+          throw error;
+        }
+      }
+    };
+    
+    return attemptRefresh();
+  };
+
   const value = {
     dashboardStats: dashboardState.stats,
     uploadCount: dashboardState.uploadCount,
@@ -72,7 +98,7 @@ export const DashboardProvider = ({ children }) => {
     formatBytes,
     formatNumber,
     forceUpdateStats: updateDashboardStats,
-    refreshDashboardWithRetry: updateDashboardStats
+    refreshDashboardWithRetry
   };
 
   return (

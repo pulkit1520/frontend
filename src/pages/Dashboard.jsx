@@ -23,6 +23,9 @@ const Dashboard = () => {
   const { user, logout } = useAuth();
   const { dashboardStats, recentActivity, loading, error, updateDashboardStats, forceUpdateStats, notifyFileUploaded, refreshDashboardWithRetry, uploadCount, formatBytes, formatNumber } = useDashboard();
   
+  // Connection retry state
+  const [connectionRetrying, setConnectionRetrying] = useState(false);
+  
   // Create formatted stats array for display
   const stats = [
     {
@@ -172,6 +175,20 @@ const Dashboard = () => {
     setSelectedFile(null);
     setDescription('');
     setTags('');
+  };
+  
+  // Handle connection retry
+  const handleConnectionRetry = async () => {
+    setConnectionRetrying(true);
+    try {
+      console.log('🔄 Retrying dashboard connection...');
+      await updateDashboardStats();
+    } catch (retryError) {
+      console.error('❌ Retry failed:', retryError);
+      toast.error('Connection retry failed. Please check your network.');
+    } finally {
+      setConnectionRetrying(false);
+    }
   };
 
   return (
@@ -400,6 +417,35 @@ const Dashboard = () => {
         </motion.div>
 
 
+        {/* Connection Error Display */}
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-red-50 border border-red-200 rounded-xl p-6 mb-6"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="bg-red-100 p-2 rounded-full">
+                  <X className="h-5 w-5 text-red-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-red-800">Connection Error</h3>
+                  <p className="text-red-600">{error}</p>
+                </div>
+              </div>
+              <button
+                onClick={handleConnectionRetry}
+                disabled={connectionRetrying}
+                className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+              >
+                <RefreshCw className={`h-4 w-4 ${connectionRetrying ? 'animate-spin' : ''}`} />
+                <span>{connectionRetrying ? 'Retrying...' : 'Retry'}</span>
+              </button>
+            </div>
+          </motion.div>
+        )}
+
         {/* Recent Activity */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -413,6 +459,19 @@ const Dashboard = () => {
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
                 <p className="mt-2 text-gray-500">Loading activity...</p>
+              </div>
+            ) : error ? (
+              <div className="text-center py-8">
+                <X className="h-12 w-12 text-red-400 mx-auto mb-4" />
+                <p className="text-red-500 font-medium">Unable to load activity data</p>
+                <p className="text-sm text-red-400 mb-4">Check your connection and try again</p>
+                <button
+                  onClick={handleConnectionRetry}
+                  disabled={connectionRetrying}
+                  className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {connectionRetrying ? 'Retrying...' : 'Retry Connection'}
+                </button>
               </div>
             ) : recentActivity.length === 0 ? (
               <div className="text-center py-8">
